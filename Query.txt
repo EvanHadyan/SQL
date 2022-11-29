@@ -1,0 +1,70 @@
+#1.Extract id_kab, nama_kab and id_jenis
+
+SELECT
+    id_kab,
+    nama_kab,
+    id_jenis
+FROM daerah_data.kabupaten;
+
+#2.Count the total of urban village in each province of Indonesia
+
+SELECT 
+    pv.nama,
+    COUNT(DISTINCT kl.id_kel) AS total_kelurahan
+FROM daerah_data.provinsi pv 
+INNER JOIN daerah_data.kabupaten kb ON pv.id_prov = kb.id_prov_fk
+INNER JOIN daerah_data.kecamatan kc ON kb.id_kab = kc.id_kab
+INNER JOIN daerah_data.kelurahan kl ON kc.id_kec = kl.id_kec
+GROUP BY 1
+ORDER BY 2 DESC;
+
+#3.Extract value of id_kel started with 9105 to know which distinct in Papua Province
+
+SELECT 
+     DISTINCT
+		kl.id_kel,
+    	kb.nama_kab
+FROM daerah_data.provinsi pv 
+INNER JOIN daerah_data.kabupaten kb ON pv.id_prov = kb.id_prov_fk
+INNER JOIN daerah_data.kecamatan kc ON kb.id_kab = kc.id_kab
+INNER JOIN daerah_data.kelurahan kl ON kc.id_kec = kl.id_kec
+WHERE (kl.id_kel, pv.nama) IN (SELECT
+                               	   kl_2.id_kel,
+                                   pv_2.nama
+                               FROM daerah_data.kelurahan kl_2, daerah_data.provinsi pv_2
+                               WHERE kl_2.id_kel LIKE "%9105%" AND pv_2.nama = "Papua Barat");
+
+#4.Count the percentage of distinct of each province in Java Island and compare to total of distinct in Indonesia
+
+SELECT 
+    pv.nama,
+    COUNT(DISTINCT kb.id_kab) AS total_kabupaten,
+    (SELECT
+     	COUNT(DISTINCT id_kab)
+     FROM daerah_data.kabupaten) AS total_kabupaten_seluruh_propinsi,
+     ROUND(COUNT(DISTINCT kb.id_kab)/(SELECT
+                                      	COUNT(DISTINCT id_kab)
+                                      FROM daerah_data.kabupaten)*100,2) AS persentase 
+FROM daerah_data.provinsi pv 
+INNER JOIN daerah_data.kabupaten kb ON pv.id_prov = kb.id_prov_fk
+INNER JOIN daerah_data.kecamatan kc ON kb.id_kab = kc.id_kab
+INNER JOIN daerah_data.kelurahan kl ON kc.id_kec = kl.id_kec
+WHERE pv.nama in ("Banten", "DKI Jakarta", "Jawa Barat", "Jawa Tengah", "DI Yogyakarta", "Jawa Timur")
+GROUP BY 1
+ORDER BY 4 DESC
+
+#5.Extract id_kec value started with 3306 to know which sub-district in Central Java Province
+
+SELECT 
+     DISTINCT
+	kc.id_kec,
+    	kc.nama
+FROM daerah_data.provinsi pv 
+INNER JOIN daerah_data.kabupaten kb ON pv.id_prov = kb.id_prov_fk
+INNER JOIN daerah_data.kecamatan kc ON kb.id_kab = kc.id_kab
+INNER JOIN daerah_data.kelurahan kl ON kc.id_kec = kl.id_kec
+WHERE (kc.id_kec, pv.nama) IN (SELECT
+                               	   kc_2.id_kec,
+                                   pv_2.nama
+                               FROM daerah_data.kecamatan kc_2, daerah_data.provinsi pv_2
+                               WHERE kc_2.id_kec LIKE "%3306%" AND pv_2.nama = "Jawa Tengah");
